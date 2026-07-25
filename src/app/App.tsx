@@ -367,16 +367,27 @@ function ContactPage({ onBack }: { onBack: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, message: msg }),
       });
+      const text = await response.text();
+      let body: any = text;
+      try { body = text ? JSON.parse(text) : {}; } catch (err) { /* not JSON */ }
 
       if (!response.ok) {
-        throw new Error("Unable to send message");
+        console.error('Contact API error', response.status, text, body);
+        window.alert(`Email error: ${response.status} - ${body?.error ?? text}`);
+        setSent(false);
+        return;
       }
 
+      console.log('Contact API success', response.status, body);
       setSent(true);
       setTimeout(() => { setFormOpen(false); setSent(false); setName(""); setEmail(""); setMsg(""); }, 1800);
     } catch {
       setSent(false);
-      window.alert("Email could not be sent. Make sure the local mail server is running and SMTP settings are configured.");
+      // Provide more detailed feedback in case of network or unexpected errors
+      // eslint-disable-next-line no-undef
+      const errMsg = (arguments[0] && arguments[0].message) || 'Unknown error';
+      console.error('Failed to send contact message', arguments[0]);
+      window.alert(`Email could not be sent: ${errMsg}. Make sure the local mail server is running and SMTP settings are configured.`);
     } finally {
       setSending(false);
     }
