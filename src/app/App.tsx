@@ -124,7 +124,7 @@ function HomePage({ onNav }: { onNav: (p: Page) => void }) {
         <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d" }}>
           <p style={{ color: p.accent, letterSpacing: "0.25em", textTransform: "uppercase", fontSize: "0.7rem", transform: "translateZ(20px)" }}>welcome to</p>
           <h1 style={{ fontSize: "clamp(3rem, 9vw, 6rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", transform: "translateZ(40px)", textShadow: isDark ? "0 8px 40px rgba(150,100,255,0.3)" : "0 8px 32px rgba(0,0,0,0.08)", transition: "color 0.4s" }}>
-            Goody's<br />Portfolio
+            Goody's Portfolio
           </h1>
           <p style={{ color: p.sub, maxWidth: "380px", textAlign: "center", lineHeight: 1.7, fontSize: "0.95rem", transform: "translateZ(20px)", transition: "color 0.4s" }}>
             Designer, builder, and creative thinker.
@@ -175,30 +175,34 @@ function AboutPage({ onBack }: { onBack: () => void }) {
       <ThemeToggle />
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", perspective: "900px" }}>
-        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", width: "100%", maxWidth: "560px", padding: "0 32px" }}>
+        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", width: "80%", maxWidth: "800px", padding: "0 32px" }}>
 
           {/* glass card */}
           <div style={{ width: "100%", borderRadius: "24px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.9)"}`, backdropFilter: "blur(20px)", padding: "48px 40px", boxShadow: isDark ? "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)" : "0 32px 80px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.8)", transform: "translateZ(0px)", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
             <p style={{ color: p.accent, letterSpacing: "0.2em", textTransform: "uppercase", fontSize: "0.7rem" }}>about me</p>
             <h2 style={{ fontSize: "clamp(2rem, 6vw, 3.2rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.1, letterSpacing: "-0.02em" }}>Hey, I'm Goody.</h2>
             <p style={{ color: p.sub, textAlign: "center", lineHeight: 1.85, fontSize: "0.95rem", maxWidth: "400px" }}>
-              I'm a creative developer with a passion for building things that feel good to use. I blend design thinking with technical craft to create experiences that are both beautiful and functional.
+              I'm a creative developer with a passion for building things that feel good to use. I blend design thinking with technical craft to create experiences that are both beautiful and functional.<br/>
+              Apart from coding, I love exploring new ideas, experimenting with motion design, and sharing knowledge with the community.<br/>
+              I also dabble in the arts of fashion, music, and photography, always seeking inspiration from the world around me.
             </p>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
               {["Design", "Code", "Motion", "Ideas"].map(s => (
                 <span key={s} style={{ padding: "6px 16px", borderRadius: "100px", background: isDark ? "rgba(200,140,80,0.15)" : "rgba(200,140,80,0.12)", color: p.tag, fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", border: `1px solid ${isDark ? "rgba(200,140,80,0.2)" : "rgba(200,140,80,0.25)"}` }}>{s}</span>
               ))}
             </div>
+
+            <a href="Goodness Efe.pdf" target="_blank">Download My CV</a>
           </div>
 
           {/* floating depth chips */}
-          <div style={{ display: "flex", justifyContent: "space-between", width: "90%", marginTop: "-16px", transform: "translateZ(30px)" }}>
+          {/* <div style={{ display: "flex", justifyContent: "space-between", width: "90%", marginTop: "-16px", transform: "translateZ(30px)" }}>
             {["Dublin 🇮🇪", "Available for hire"].map((chip, i) => (
               <div key={i} style={{ padding: "8px 18px", borderRadius: "100px", background: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`, backdropFilter: "blur(12px)", color: p.sub, fontSize: "0.75rem", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
                 {chip}
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -208,71 +212,129 @@ function AboutPage({ onBack }: { onBack: () => void }) {
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
-function TiltCard({ children, isDark, bg, border }: { children: React.ReactNode; isDark: boolean; bg: string; border: string }) {
-  const ref = useRef<HTMLDivElement>(null);
+const PROJECTS = [
+  {
+    title: "Verite",
+    tag: "Web-App",
+    desc: "A web experience built with intention — every interaction considered, every pixel purposeful.",
+    year: "2024",
+    bg: ["#0e1a2b", "#0a2240"],
+    bgL: ["#ddeeff", "#c8e0f8"],
+    orb: "rgba(60,130,255,0.18)",
+    accent: "#5599ff",
+    accentL: "#2266cc",
+    href: "https://github.com/G00dzero/verite.git",
+  },
+  {
+    title: "Claddagh Watch",
+    tag: "Design",
+    desc: "Design meets function in every detail. A system built on coherence and quiet confidence.",
+    year: "2024",
+    bg: ["#1a0e22", "#2a0a38"],
+    bgL: ["#f0e8ff", "#e0d0f8"],
+    orb: "rgba(160,80,255,0.18)",
+    accent: "#cc77ff",
+    accentL: "#8844cc",
+    href: "https://github.com/TUS-DEVMR/full-stack-project-multi-sprint-development-iipgroup2a.git",
+  },
+  {
+    title: "Roundablock",
+    tag: "Motion",
+    desc: "Motion, interaction, and clean code — where the boundary between design and engineering blurs.",
+    year: "2026",
+    bg: ["#0a1a10", "#0a2216"],
+    bgL: ["#e0f4e8", "#c8ecd4"],
+    orb: "rgba(60,200,100,0.16)",
+    accent: "#44dd88",
+    accentL: "#228844",
+    href: "https://github.com/G00dzero/RoundaBlock.git",
+  },
+  {
+    title: "Meme Generator",
+    tag: "Code",
+    desc: "A playful build for fast, shareable content.",
+    year: "2023",
+    bg: ["#26131a", "#3a1721"],
+    bgL: ["#ffe4e8", "#f6ccd4"],
+    orb: "rgba(255,100,130,0.16)",
+    accent: "#ff6b8b",
+    accentL: "#cc3a61",
+    href: "#",
+  },
+];
+
+function FullProjectCard({ project, isDark }: { project: typeof PROJECTS[0]; isDark: boolean }) {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [hover, setHover] = useState(false);
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
-    const cx = (e.clientX - r.left) / r.width  - 0.5;
-    const cy = (e.clientY - r.top)  / r.height - 0.5;
-    setTilt({ rx: -cy * 16, ry: cx * 16 });
+    const cx = (e.clientX - r.left) / r.width - 0.5;
+    const cy = (e.clientY - r.top) / r.height - 0.5;
+    setTilt({ rx: -cy * 10, ry: cx * 10 });
   }
 
+  const bg0 = isDark ? project.bg[0] : project.bgL[0];
+  const bg1 = isDark ? project.bg[1] : project.bgL[1];
+  const ac = isDark ? project.accent : project.accentL;
+  const textMain = isDark ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.85)";
+  const textSub = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)";
+
   return (
-    <div ref={ref} onMouseMove={onMove} onMouseEnter={() => setHover(true)} onMouseLeave={() => { setTilt({ rx: 0, ry: 0 }); setHover(false); }}
-      style={{ padding: "24px 28px", borderRadius: "16px", background: bg, border: `1px solid ${border}`, cursor: "pointer", transition: "box-shadow 0.3s, transform 0.12s ease-out", transform: `perspective(600px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) ${hover ? "translateY(-4px)" : ""}`, boxShadow: hover ? (isDark ? "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)" : "0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.9)") : (isDark ? "0 4px 20px rgba(0,0,0,0.3)" : "0 4px 20px rgba(0,0,0,0.05)"), backdropFilter: "blur(12px)" }}>
-      {children}
-    </div>
+    <a href={project.href} target={project.href === "#" ? "_self" : "_blank"} rel={project.href === "#" ? undefined : "noopener noreferrer"} style={{ width: "100%", height: "100%", textDecoration: "none", color: "inherit" }}>
+      <div
+        onMouseMove={onMove}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => { setTilt({ rx: 0, ry: 0 }); setHover(false); }}
+        style={{
+          width: "100%", height: "100%", flexShrink: 0,
+          background: `linear-gradient(135deg, ${bg0} 0%, ${bg1} 100%)`,
+          position: "relative", overflow: "hidden",
+          cursor: "default",
+          transition: "transform 0.12s ease-out",
+          transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
+        }}
+      >
+        <div style={{ position: "absolute", width: "60vmax", height: "60vmax", borderRadius: "50%", background: project.orb, filter: "blur(80px)", left: "50%", top: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none", transition: "transform 0.3s ease-out", ...(hover ? { transform: `translate(calc(-50% + ${tilt.ry * 6}px), calc(-50% + ${-tilt.rx * 6}px))` } : {}) }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: `radial-gradient(circle, ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"} 1px, transparent 1px)`, backgroundSize: "32px 32px", pointerEvents: "none" }} />
+        {hover && <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 60% 50% at ${50 + tilt.ry * 2}% ${50 - tilt.rx * 2}%, ${isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.35)"} 0%, transparent 70%)`, pointerEvents: "none" }} />}
+
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "flex-start", padding: "32px 28px 40px", transformStyle: "preserve-3d" }}>
+          <div style={{ position: "absolute", top: "16px", right: "20px", fontSize: "clamp(4rem, 8vw, 7rem)", fontWeight: 900, color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)", lineHeight: 1, userSelect: "none", letterSpacing: "-0.05em" }}>
+            {String(PROJECTS.indexOf(project) + 1).padStart(2, "0")}
+          </div>
+
+          <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "100px", border: `1px solid ${ac}55`, background: `${ac}18`, color: ac, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px", transform: "translateZ(20px)" }}>
+            {project.tag} · {project.year}
+          </span>
+          <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.6rem)", fontWeight: 800, color: textMain, lineHeight: 1.0, letterSpacing: "-0.03em", marginBottom: "14px", transform: "translateZ(40px)", textShadow: hover ? `0 12px 40px ${ac}44` : "none", transition: "text-shadow 0.3s" }}>
+            {project.title}
+          </h2>
+          <p style={{ color: textSub, fontSize: "0.82rem", lineHeight: 1.7, transform: "translateZ(25px)", marginBottom: "24px", maxWidth: "240px" }}>
+            {project.desc}
+          </p>
+          <button style={{ padding: "9px 22px", borderRadius: "100px", border: `1.5px solid ${ac}60`, background: `${ac}15`, color: ac, cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.08em", backdropFilter: "blur(8px)", transition: "all 0.25s", transform: "translateZ(30px)" }}
+            onMouseOver={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = `${ac}30`; b.style.borderColor = ac; }}
+            onMouseOut={e => {  const b = e.currentTarget as HTMLButtonElement; b.style.background = `${ac}15`; b.style.borderColor = `${ac}60`; }}>
+            View project →
+          </button>
+        </div>
+      </div>
+    </a>
   );
 }
 
 function ProjectsPage({ onBack }: { onBack: () => void }) {
   const { theme } = useTheme();
-  const p = T[theme].projects;
   const isDark = theme === "dark";
 
-  const projects = [
-    { title: "Project One",   desc: "A web experience built with intention.",   tag: "Web" },
-    { title: "Project Two",   desc: "Design meets function in every detail.",   tag: "Design" },
-    { title: "Project Three", desc: "Motion, interaction, and clean code.",     tag: "Motion" },
-  ];
-
-  const orbs = [
-    { size: 400, x: "85%", y: "15%", color: isDark ? "rgba(80,180,100,0.08)"  : "rgba(80,180,100,0.1)",  blur: 70 },
-    { size: 300, x: "5%",  y: "80%", color: isDark ? "rgba(60,140,80,0.07)"   : "rgba(60,160,80,0.09)",  blur: 55 },
-  ];
-
   return (
-    <div style={{ width: "100%", height: "100%", background: p.bg, position: "relative", overflow: "hidden", transition: "background 0.4s" }}>
-      {orbs.map((o, i) => (
-        <div key={i} style={{ position: "absolute", width: o.size, height: o.size, borderRadius: "50%", background: o.color, filter: `blur(${o.blur}px)`, left: o.x, top: o.y, transform: "translate(-50%,-50%)", pointerEvents: "none" }} />
+    <div style={{ width: "100%", height: "100%", position: "relative", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "2px", background: "rgba(255,255,255,0.06)" }}>
+      <BackButton onBack={onBack} dark />
+      <ThemeToggle invert />
+      {PROJECTS.map((proj, i) => (
+        <FullProjectCard key={i} project={proj} isDark={isDark} />
       ))}
-
-      {/* dot grid */}
-      <div style={{ position: "absolute", inset: 0, backgroundImage: `radial-gradient(circle, ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"} 1px, transparent 1px)`, backgroundSize: "28px 28px", pointerEvents: "none" }} />
-
-      <BackButton onBack={onBack} dark={isDark} />
-      <ThemeToggle />
-
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px", padding: "80px 32px 40px" }}>
-        <p style={{ color: p.accent, letterSpacing: "0.25em", textTransform: "uppercase", fontSize: "0.7rem" }}>work</p>
-        <h2 style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: "8px" }}>Projects</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%", maxWidth: "500px" }}>
-          {projects.map((proj, i) => (
-            <TiltCard key={i} isDark={isDark} bg={p.cardBg} border={p.cardBorder}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <p style={{ fontWeight: 700, color: p.text, marginBottom: "6px", fontSize: "1rem" }}>{proj.title}</p>
-                  <p style={{ color: p.sub, fontSize: "0.875rem", lineHeight: 1.6 }}>{proj.desc}</p>
-                </div>
-                <span style={{ padding: "4px 12px", borderRadius: "100px", background: isDark ? "rgba(106,170,112,0.15)" : "rgba(106,170,112,0.12)", color: p.accent, fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", flexShrink: 0, marginLeft: "16px", border: `1px solid ${isDark ? "rgba(106,170,112,0.2)" : "rgba(106,170,112,0.25)"}` }}>{proj.tag}</span>
-              </div>
-            </TiltCard>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -293,15 +355,31 @@ function ContactPage({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState("");
   const [msg, setMsg]     = useState("");
   const [sent, setSent]   = useState(false);
+  const [sending, setSending] = useState(false);
   const { ref, tilt } = useTilt(6);
 
-  function handleSend(e: FormEvent) {
+  async function handleSend(e: FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent(`Message from ${name}`);
-    const body    = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${msg}`);
-    window.open(`mailto:goody@example.com?subject=${subject}&body=${body}`, "_blank");
-    setSent(true);
-    setTimeout(() => { setFormOpen(false); setSent(false); setName(""); setEmail(""); setMsg(""); }, 1800);
+    setSending(true);
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message: msg }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to send message");
+      }
+
+      setSent(true);
+      setTimeout(() => { setFormOpen(false); setSent(false); setName(""); setEmail(""); setMsg(""); }, 1800);
+    } catch {
+      setSent(false);
+      window.alert("Email could not be sent. Make sure the local mail server is running and SMTP settings are configured.");
+    } finally {
+      setSending(false);
+    }
   }
 
   const inputStyle = { width: "100%", padding: "12px 16px", borderRadius: "10px", border: "1.5px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "white", fontSize: "0.9rem", outline: "none", transition: "border-color 0.2s" } as React.CSSProperties;
@@ -338,6 +416,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
             {[
               { href: "https://www.instagram.com/jt_goody", icon: <Instagram size={18} />, label: "@jt_goody" },
               { href: "https://wa.me/353892095987",         icon: <Phone size={18} />,      label: "WhatsApp" },
+              { href: "https://www.linkedin.com/in/efe-goodness-5b995b2a1", icon: <span style={{ fontWeight: 700, fontSize: "0.75rem" }}>in</span>, label: "LinkedIn" },
             ].map(({ href, icon, label }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" title={label}
                 style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "100px", border: "1.5px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: "0.8rem", backdropFilter: "blur(8px)", transition: "all 0.25s" }}
@@ -361,16 +440,16 @@ function ContactPage({ onBack }: { onBack: () => void }) {
           </button>
         </div>
         {sent ? (
-          <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.6)" }}>✓ Opening your mail app…</div>
+          <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.6)" }}>✓ Message sent.</div>
         ) : (
           <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <input required placeholder="Your name"  value={name}  onChange={e => setName(e.target.value)}  style={inputStyle} onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "rgba(140,100,255,0.5)"; }} onBlur={e => { (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.1)"; }} />
             <input required type="email" placeholder="Your email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "rgba(140,100,255,0.5)"; }} onBlur={e => { (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.1)"; }} />
             <textarea required placeholder="Your message" rows={4} value={msg} onChange={e => setMsg(e.target.value)} style={{ ...inputStyle, resize: "none" }} onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = "rgba(140,100,255,0.5)"; }} onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = "rgba(255,255,255,0.1)"; }} />
-            <button type="submit" style={{ marginTop: "4px", padding: "13px", borderRadius: "10px", border: "none", background: "white", color: "#0f0f1a", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "opacity 0.2s" }}
+            <button type="submit" disabled={sending} style={{ marginTop: "4px", padding: "13px", borderRadius: "10px", border: "none", background: sending ? "rgba(255,255,255,0.7)" : "white", color: "#0f0f1a", fontWeight: 700, fontSize: "0.9rem", cursor: sending ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "opacity 0.2s" }}
               onMouseOver={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
               onMouseOut={e => {  (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}>
-              <Send size={15} /> Send message
+              <Send size={15} /> {sending ? "Sending..." : "Send message"}
             </button>
           </form>
         )}
