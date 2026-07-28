@@ -415,12 +415,14 @@ function ContactPage({ onBack }: { onBack: () => void }) {
   const [msg, setMsg]     = useState("");
   const [sent, setSent]   = useState(false);
   const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState<{ kind: "idle" | "success" | "error"; message: string }>({ kind: "idle", message: "" });
   const { ref, tilt } = useTilt(6);
   const isCompact = useIsCompact(820);
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
     setSending(true);
+    setStatus({ kind: "idle", message: "" });
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
@@ -433,21 +435,27 @@ function ContactPage({ onBack }: { onBack: () => void }) {
 
       if (!response.ok) {
         console.error('Contact API error', response.status, text, body);
-        window.alert(`Email error: ${response.status} - ${body?.error ?? text}`);
+        const errorText = body?.error || text || `Server responded with ${response.status}.`;
+        setStatus({
+          kind: "error",
+          message: `Email could not be sent. ${errorText}`,
+        });
         setSent(false);
         return;
       }
 
       console.log('Contact API success', response.status, body);
+      setStatus({ kind: "success", message: "Message sent. I’ll get back to you soon." });
       setSent(true);
-      setTimeout(() => { setFormOpen(false); setSent(false); setName(""); setEmail(""); setMsg(""); }, 1800);
-    } catch {
+      setTimeout(() => { setFormOpen(false); setSent(false); setStatus({ kind: "idle", message: "" }); setName(""); setEmail(""); setMsg(""); }, 1800);
+    } catch (error) {
       setSent(false);
-      // Provide more detailed feedback in case of network or unexpected errors
-      // eslint-disable-next-line no-undef
-      const errMsg = (arguments[0] && arguments[0].message) || 'Unknown error';
-      console.error('Failed to send contact message', arguments[0]);
-      window.alert(`Email could not be sent: ${errMsg}. Make sure the local mail server is running and SMTP settings are configured.`);
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      console.error('Failed to send contact message', error);
+      setStatus({
+        kind: "error",
+        message: `Email could not be sent. ${errMsg}. Make sure SMTP settings are configured in Vercel.`,
+      });
     } finally {
       setSending(false);
     }
@@ -510,6 +518,22 @@ function ContactPage({ onBack }: { onBack: () => void }) {
             <X size={20} />
           </button>
         </div>
+        {status.kind !== "idle" && (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px 14px",
+              borderRadius: "14px",
+              border: `1px solid ${status.kind === "success" ? "rgba(117, 255, 180, 0.28)" : "rgba(255, 128, 166, 0.28)"}`,
+              background: status.kind === "success" ? "rgba(117, 255, 180, 0.08)" : "rgba(255, 128, 166, 0.08)",
+              color: "white",
+              fontSize: "0.88rem",
+              lineHeight: 1.5,
+            }}
+          >
+            {status.message}
+          </div>
+        )}
         {sent ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.6)" }}>✓ Message sent.</div>
         ) : (
