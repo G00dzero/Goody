@@ -209,7 +209,18 @@ function AboutPage({ onBack }: { onBack: () => void }) {
               ))}
             </div>
 
-            <a href="Goodness Efe.pdf" target="_blank">Download My CV</a>
+            <a  href="Goodness Efe.pdf" target="_blank"
+            rel="noopener noreferrer"
+              download
+              style={{
+                color: isDark ? "white" : "#6b5f50",
+                textDecoration: "none",
+                fontWeight: 600,
+                marginTop: "8px",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = isDark ? "white" : "#352d24"; }}
+              onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = isDark ? "white" : "#6b5f50"; }}>Download My CV</a>
           </div>
 
           {/* floating depth chips */}
