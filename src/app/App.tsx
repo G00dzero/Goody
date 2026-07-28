@@ -516,7 +516,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
                 {icon} {label}
               </a>
             ))}
-            <a
+            {/* <a
               href="/Goodness%20Efe.pdf"
               target="_blank"
               rel="noopener noreferrer"
@@ -532,7 +532,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
               onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = isDark ? "white" : "#6b5f50"; }}
             >
               Download My CV
-            </a>
+            </a> */}
           </div>
         </div>
       </div>
