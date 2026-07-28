@@ -98,8 +98,8 @@ function ThemeToggle({ invert }: { invert?: boolean }) {
 }
 
 function BackButton({ onBack, dark }: { onBack: () => void; dark?: boolean }) {
-  const col = dark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
-  const hov = dark ? "white" : "#111";
+  const col = dark ? "white" : "#6b5f50";
+  const hov = dark ? "white" : "#352d24";
   return (
     <button onClick={onBack} style={{ position: "absolute", top: "32px", left: "32px", background: "none", border: "none", cursor: "pointer", color: col, fontSize: "0.85rem", letterSpacing: "0.05em", padding: "8px 0", transition: "color 0.2s", zIndex: 5 }}
       onMouseOver={e => { (e.currentTarget as HTMLButtonElement).style.color = hov; }}
@@ -416,17 +416,25 @@ function ContactPage({ onBack }: { onBack: () => void }) {
   const [sent, setSent]   = useState(false);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<{ kind: "idle" | "success" | "error"; message: string }>({ kind: "idle", message: "" });
+  const { theme } = useTheme();
   const { ref, tilt } = useTilt(6);
   const isCompact = useIsCompact(820);
+  const isDark = theme === "dark";
+  const requestTimeoutMs = 15000;
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
     setSending(true);
     setStatus({ kind: "idle", message: "" });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ name, email, message: msg }),
       });
       const text = await response.text();
@@ -452,11 +460,15 @@ function ContactPage({ onBack }: { onBack: () => void }) {
       setSent(false);
       const errMsg = error instanceof Error ? error.message : "Unknown error";
       console.error('Failed to send contact message', error);
+      const timeoutMessage = errMsg.includes("AbortError")
+        ? `The request timed out after ${requestTimeoutMs / 1000} seconds.`
+        : errMsg;
       setStatus({
         kind: "error",
-        message: `Email could not be sent. ${errMsg}. Make sure SMTP settings are configured in Vercel.`,
+        message: `Email could not be sent. ${timeoutMessage} Make sure SMTP settings are configured in Vercel.`,
       });
     } finally {
+      clearTimeout(timeoutId);
       setSending(false);
     }
   }
@@ -504,6 +516,23 @@ function ContactPage({ onBack }: { onBack: () => void }) {
                 {icon} {label}
               </a>
             ))}
+            <a
+              href="/Goodness%20Efe.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              style={{
+                color: isDark ? "white" : "#6b5f50",
+                textDecoration: "none",
+                fontWeight: 600,
+                marginTop: "8px",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = isDark ? "white" : "#352d24"; }}
+              onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = isDark ? "white" : "#6b5f50"; }}
+            >
+              Download My CV
+            </a>
           </div>
         </div>
       </div>
