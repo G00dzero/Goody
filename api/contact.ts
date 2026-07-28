@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
-function json(status: number, data: Record<string, unknown>) {
-  return Response.json(data, { status });
+function sendJson(res: ServerResponse, status: number, data: Record<string, unknown>) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
 }
 
 function readBody(payload: unknown) {
@@ -13,12 +16,39 @@ function readBody(payload: unknown) {
   };
 }
 
+function readRequestBody(req: IncomingMessage) {
+  return new Promise<unknown>((resolve, reject) => {
+    let raw = '';
+
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (raw.length > 1_000_000) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+      }
+    });
+
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+
 async function createTransport() {
   if (process.env.SMTP_HOST || (process.env.SMTP_USER && process.env.SMTP_PASS)) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false') === 'true',
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
       auth: process.env.SMTP_USER && process.env.SMTP_PASS
         ? {
             user: process.env.SMTP_USER,
@@ -31,26 +61,27 @@ async function createTransport() {
   throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS must be configured in Vercel');
 }
 
-export default async function handler(request: Request) {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    res.end();
+    return;
   }
 
-  if (request.method !== 'POST') {
-    return json(404, { error: 'Not found' });
+  if (req.method !== 'POST') {
+    sendJson(res, 404, { error: 'Not found' });
+    return;
   }
 
   try {
-    const payload = readBody(await request.json());
+    const payload = readBody(await readRequestBody(req));
     if (!payload.name || !payload.email || !payload.message) {
-      return json(400, { error: 'Missing name, email, or message' });
+      sendJson(res, 400, { error: 'Missing name, email, or message' });
+      return;
     }
 
     const transporter = await createTransport();
@@ -65,9 +96,9 @@ export default async function handler(request: Request) {
       text: `Name: ${payload.name}\nEmail: ${payload.email}\n\n${payload.message}`,
     });
 
-    return json(200, { ok: true });
+    sendJson(res, 200, { ok: true });
   } catch (error) {
-    return json(500, {
+    sendJson(res, 500, {
       error: error instanceof Error ? error.message : 'Failed to send email',
     });
   }
