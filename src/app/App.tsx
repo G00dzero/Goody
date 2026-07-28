@@ -49,6 +49,21 @@ function useTilt(strength = 12) {
   return { ref, tilt };
 }
 
+function useIsCompact(breakpoint = 820) {
+  const [isCompact, setIsCompact] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const update = () => setIsCompact(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [breakpoint]);
+
+  return isCompact;
+}
+
 // ── Nav maps ──────────────────────────────────────────────────────────────────
 const ENTER_FROM: Record<Page, string> = { home: "translateX(-100%)", about: "translateX(100%)", projects: "translateX(-100%)", contact: "translateY(100%)" };
 const EXIT_TO:    Record<Page, string> = { home: "translateX(-100%)", about: "translateX(100%)", projects: "translateX(-100%)", contact: "translateY(100%)" };
@@ -100,6 +115,7 @@ function HomePage({ onNav }: { onNav: (p: Page) => void }) {
   const p = T[theme].home;
   const { ref, tilt } = useTilt(10);
   const isDark = theme === "dark";
+  const isCompact = useIsCompact(820);
 
   const orbs = [
     { size: 500, x: "60%", y: "-10%", color: isDark ? "rgba(120,80,200,0.12)" : "rgba(180,140,255,0.15)", blur: 80 },
@@ -121,21 +137,21 @@ function HomePage({ onNav }: { onNav: (p: Page) => void }) {
 
       {/* 3D tilt card */}
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", perspective: "800px" }}>
-        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d" }}>
-          <p style={{ color: p.accent, letterSpacing: "0.25em", textTransform: "uppercase", fontSize: "0.7rem", transform: "translateZ(20px)" }}>welcome to</p>
-          <h1 style={{ fontSize: "clamp(3rem, 9vw, 6rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", transform: "translateZ(40px)", textShadow: isDark ? "0 8px 40px rgba(150,100,255,0.3)" : "0 8px 32px rgba(0,0,0,0.08)", transition: "color 0.4s" }}>
+        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: isCompact ? "16px" : "20px", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", padding: isCompact ? "0 18px" : 0 }}>
+          <p style={{ color: p.accent, letterSpacing: "0.25em", textTransform: "uppercase", fontSize: isCompact ? "0.62rem" : "0.7rem", transform: "translateZ(20px)" }}>welcome to</p>
+          <h1 style={{ fontSize: isCompact ? "clamp(2.35rem, 13vw, 4.2rem)" : "clamp(3rem, 9vw, 6rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", transform: "translateZ(40px)", textShadow: isDark ? "0 8px 40px rgba(150,100,255,0.3)" : "0 8px 32px rgba(0,0,0,0.08)", transition: "color 0.4s" }}>
             Goody's Portfolio
           </h1>
-          <p style={{ color: p.sub, maxWidth: "380px", textAlign: "center", lineHeight: 1.7, fontSize: "0.95rem", transform: "translateZ(20px)", transition: "color 0.4s" }}>
+          <p style={{ color: p.sub, maxWidth: isCompact ? "300px" : "380px", textAlign: "center", lineHeight: 1.7, fontSize: isCompact ? "0.88rem" : "0.95rem", transform: "translateZ(20px)", transition: "color 0.4s" }}>
             Designer, builder, and creative thinker.
           </p>
           {/* nav pills */}
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", transform: "translateZ(30px)", marginTop: "12px" }}>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", transform: "translateZ(30px)", marginTop: "12px", padding: isCompact ? "0 8px" : 0 }}>
             {(["Projects", "About", "Contact"] as const).map((label) => {
               const page = label.toLowerCase() as Page;
               return (
                 <button key={label} onClick={() => onNav(page)}
-                  style={{ padding: "10px 28px", borderRadius: "100px", border: `1.5px solid ${p.border}`, background: "transparent", color: p.text, cursor: "pointer", fontSize: "0.88rem", backdropFilter: "blur(8px)", transition: "all 0.2s" }}
+                  style={{ padding: isCompact ? "9px 20px" : "10px 28px", borderRadius: "100px", border: `1.5px solid ${p.border}`, background: "transparent", color: p.text, cursor: "pointer", fontSize: isCompact ? "0.8rem" : "0.88rem", backdropFilter: "blur(8px)", transition: "all 0.2s" }}
                   onMouseOver={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = p.btnHoverBg; b.style.color = p.btnHoverText; b.style.borderColor = p.btnHoverBg; b.style.transform = "translateY(-2px)"; }}
                   onMouseOut={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; b.style.color = p.text; b.style.borderColor = p.border; b.style.transform = ""; }}>
                   {label}
@@ -155,6 +171,7 @@ function AboutPage({ onBack }: { onBack: () => void }) {
   const p = T[theme].about;
   const { ref, tilt } = useTilt(8);
   const isDark = theme === "dark";
+  const isCompact = useIsCompact(820);
 
   const floaters = [
     { size: 420, x: "80%", y: "20%", color: isDark ? "rgba(200,140,80,0.08)"  : "rgba(200,140,80,0.1)",  blur: 70, speed: "18s" },
@@ -175,20 +192,20 @@ function AboutPage({ onBack }: { onBack: () => void }) {
       <ThemeToggle />
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", perspective: "900px" }}>
-        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", width: "80%", maxWidth: "800px", padding: "0 32px" }}>
+        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", width: isCompact ? "100%" : "80%", maxWidth: "800px", padding: isCompact ? "0 16px" : "0 32px" }}>
 
           {/* glass card */}
-          <div style={{ width: "100%", borderRadius: "24px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.9)"}`, backdropFilter: "blur(20px)", padding: "48px 40px", boxShadow: isDark ? "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)" : "0 32px 80px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.8)", transform: "translateZ(0px)", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
-            <p style={{ color: p.accent, letterSpacing: "0.2em", textTransform: "uppercase", fontSize: "0.7rem" }}>about me</p>
-            <h2 style={{ fontSize: "clamp(2rem, 6vw, 3.2rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.1, letterSpacing: "-0.02em" }}>Hey, I'm Goody.</h2>
-            <p style={{ color: p.sub, textAlign: "center", lineHeight: 1.85, fontSize: "0.95rem", maxWidth: "400px" }}>
+          <div style={{ width: "100%", borderRadius: "24px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.9)"}`, backdropFilter: "blur(20px)", padding: isCompact ? "32px 22px" : "48px 40px", boxShadow: isDark ? "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)" : "0 32px 80px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.8)", transform: "translateZ(0px)", display: "flex", flexDirection: "column", alignItems: "center", gap: isCompact ? "16px" : "20px" }}>
+            <p style={{ color: p.accent, letterSpacing: "0.2em", textTransform: "uppercase", fontSize: isCompact ? "0.62rem" : "0.7rem" }}>about me</p>
+            <h2 style={{ fontSize: isCompact ? "clamp(1.8rem, 8vw, 2.6rem)" : "clamp(2rem, 6vw, 3.2rem)", fontWeight: 800, color: p.text, textAlign: "center", lineHeight: 1.1, letterSpacing: "-0.02em" }}>Hey, I'm Goody.</h2>
+            <p style={{ color: p.sub, textAlign: "center", lineHeight: 1.85, fontSize: isCompact ? "0.88rem" : "0.95rem", maxWidth: "400px" }}>
               I'm a creative developer with a passion for building things that feel good to use. I blend design thinking with technical craft to create experiences that are both beautiful and functional.<br/>
               Apart from coding, I love exploring new ideas, experimenting with motion design, and sharing knowledge with the community.<br/>
               I also dabble in the arts of fashion, music, and photography, always seeking inspiration from the world around me.
             </p>
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
               {["Design", "Code", "Motion", "Ideas"].map(s => (
-                <span key={s} style={{ padding: "6px 16px", borderRadius: "100px", background: isDark ? "rgba(200,140,80,0.15)" : "rgba(200,140,80,0.12)", color: p.tag, fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", border: `1px solid ${isDark ? "rgba(200,140,80,0.2)" : "rgba(200,140,80,0.25)"}` }}>{s}</span>
+                <span key={s} style={{ padding: isCompact ? "6px 12px" : "6px 16px", borderRadius: "100px", background: isDark ? "rgba(200,140,80,0.15)" : "rgba(200,140,80,0.12)", color: p.tag, fontSize: isCompact ? "0.68rem" : "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", border: `1px solid ${isDark ? "rgba(200,140,80,0.2)" : "rgba(200,140,80,0.25)"}` }}>{s}</span>
               ))}
             </div>
 
@@ -266,6 +283,7 @@ const PROJECTS = [
 function FullProjectCard({ project, isDark }: { project: typeof PROJECTS[0]; isDark: boolean }) {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [hover, setHover] = useState(false);
+  const isCompact = useIsCompact(820);
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -293,27 +311,28 @@ function FullProjectCard({ project, isDark }: { project: typeof PROJECTS[0]; isD
           cursor: "default",
           transition: "transform 0.12s ease-out",
           transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
+          boxShadow: isCompact ? "0 18px 40px rgba(0,0,0,0.18)" : "none",
         }}
       >
         <div style={{ position: "absolute", width: "60vmax", height: "60vmax", borderRadius: "50%", background: project.orb, filter: "blur(80px)", left: "50%", top: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none", transition: "transform 0.3s ease-out", ...(hover ? { transform: `translate(calc(-50% + ${tilt.ry * 6}px), calc(-50% + ${-tilt.rx * 6}px))` } : {}) }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `radial-gradient(circle, ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"} 1px, transparent 1px)`, backgroundSize: "32px 32px", pointerEvents: "none" }} />
         {hover && <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 60% 50% at ${50 + tilt.ry * 2}% ${50 - tilt.rx * 2}%, ${isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.35)"} 0%, transparent 70%)`, pointerEvents: "none" }} />}
 
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "flex-start", padding: "32px 28px 40px", transformStyle: "preserve-3d" }}>
-          <div style={{ position: "absolute", top: "16px", right: "20px", fontSize: "clamp(4rem, 8vw, 7rem)", fontWeight: 900, color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)", lineHeight: 1, userSelect: "none", letterSpacing: "-0.05em" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "flex-start", padding: isCompact ? "26px 22px 30px" : "32px 28px 40px", transformStyle: "preserve-3d" }}>
+          <div style={{ position: "absolute", top: isCompact ? "12px" : "16px", right: isCompact ? "16px" : "20px", fontSize: isCompact ? "clamp(3rem, 15vw, 5rem)" : "clamp(4rem, 8vw, 7rem)", fontWeight: 900, color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)", lineHeight: 1, userSelect: "none", letterSpacing: "-0.05em" }}>
             {String(PROJECTS.indexOf(project) + 1).padStart(2, "0")}
           </div>
 
-          <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "100px", border: `1px solid ${ac}55`, background: `${ac}18`, color: ac, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px", transform: "translateZ(20px)" }}>
+          <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: "100px", border: `1px solid ${ac}55`, background: `${ac}18`, color: ac, fontSize: isCompact ? "0.6rem" : "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px", transform: "translateZ(20px)" }}>
             {project.tag} · {project.year}
           </span>
-          <h2 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.6rem)", fontWeight: 800, color: textMain, lineHeight: 1.0, letterSpacing: "-0.03em", marginBottom: "14px", transform: "translateZ(40px)", textShadow: hover ? `0 12px 40px ${ac}44` : "none", transition: "text-shadow 0.3s" }}>
+          <h2 style={{ fontSize: isCompact ? "clamp(1.5rem, 8vw, 2.1rem)" : "clamp(1.6rem, 3.5vw, 2.6rem)", fontWeight: 800, color: textMain, lineHeight: 1.0, letterSpacing: "-0.03em", marginBottom: "14px", transform: "translateZ(40px)", textShadow: hover ? `0 12px 40px ${ac}44` : "none", transition: "text-shadow 0.3s" }}>
             {project.title}
           </h2>
-          <p style={{ color: textSub, fontSize: "0.82rem", lineHeight: 1.7, transform: "translateZ(25px)", marginBottom: "24px", maxWidth: "240px" }}>
+          <p style={{ color: textSub, fontSize: isCompact ? "0.76rem" : "0.82rem", lineHeight: 1.7, transform: "translateZ(25px)", marginBottom: "24px", maxWidth: isCompact ? "220px" : "240px" }}>
             {project.desc}
           </p>
-          <button style={{ padding: "9px 22px", borderRadius: "100px", border: `1.5px solid ${ac}60`, background: `${ac}15`, color: ac, cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.08em", backdropFilter: "blur(8px)", transition: "all 0.25s", transform: "translateZ(30px)" }}
+          <button style={{ padding: isCompact ? "8px 18px" : "9px 22px", borderRadius: "100px", border: `1.5px solid ${ac}60`, background: `${ac}15`, color: ac, cursor: "pointer", fontSize: isCompact ? "0.72rem" : "0.78rem", letterSpacing: "0.08em", backdropFilter: "blur(8px)", transition: "all 0.25s", transform: "translateZ(30px)" }}
             onMouseOver={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = `${ac}30`; b.style.borderColor = ac; }}
             onMouseOut={e => {  const b = e.currentTarget as HTMLButtonElement; b.style.background = `${ac}15`; b.style.borderColor = `${ac}60`; }}>
             View project →
@@ -327,14 +346,54 @@ function FullProjectCard({ project, isDark }: { project: typeof PROJECTS[0]; isD
 function ProjectsPage({ onBack }: { onBack: () => void }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const isCompact = useIsCompact(820);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "2px", background: "rgba(255,255,255,0.06)" }}>
+    <div style={{ width: "100%", height: "100%", position: "relative", display: isCompact ? "flex" : "grid", gridTemplateColumns: isCompact ? undefined : "repeat(4, minmax(0, 1fr))", gap: isCompact ? "14px" : "2px", background: "rgba(255,255,255,0.06)" }}>
       <BackButton onBack={onBack} dark />
       <ThemeToggle invert />
-      {PROJECTS.map((proj, i) => (
+      {isCompact ? (
+        <div
+          style={{
+            display: "flex",
+            gap: "14px",
+            width: "100%",
+            height: "100%",
+            overflowX: "auto",
+            overflowY: "hidden",
+            padding: "86px 18px 22px",
+            scrollSnapType: "x mandatory",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+          onScroll={(e) => {
+            const container = e.currentTarget;
+            const cardWidth = container.firstElementChild instanceof HTMLElement
+              ? container.firstElementChild.getBoundingClientRect().width + 14
+              : container.clientWidth;
+            const nextIndex = Math.max(0, Math.min(PROJECTS.length - 1, Math.round(container.scrollLeft / cardWidth)));
+            if (nextIndex !== activeIndex) setActiveIndex(nextIndex);
+          }}
+        >
+          {PROJECTS.map((proj, i) => (
+            <div key={i} style={{ minWidth: "82vw", maxWidth: "82vw", height: "100%", scrollSnapAlign: "center", scrollSnapStop: "always" }}>
+              <FullProjectCard project={proj} isDark={isDark} />
+            </div>
+          ))}
+        </div>
+      ) : PROJECTS.map((proj, i) => (
         <FullProjectCard key={i} project={proj} isDark={isDark} />
       ))}
+
+      {isCompact && (
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: "14px", display: "flex", justifyContent: "center", gap: "6px", pointerEvents: "none", zIndex: 6 }}>
+          {PROJECTS.map((_, i) => (
+            <span key={i} style={{ width: i === activeIndex ? "18px" : "6px", height: "6px", borderRadius: "999px", background: i === activeIndex ? (isDark ? "rgba(255,255,255,0.82)" : "rgba(16,24,16,0.86)") : "rgba(255,255,255,0.28)", transition: "all 0.2s ease" }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -357,6 +416,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
   const [sent, setSent]   = useState(false);
   const [sending, setSending] = useState(false);
   const { ref, tilt } = useTilt(6);
+  const isCompact = useIsCompact(820);
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
@@ -410,14 +470,14 @@ function ContactPage({ onBack }: { onBack: () => void }) {
       <ThemeToggle invert />
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", perspective: "900px" }}>
-        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", padding: "0 32px", width: "100%", maxWidth: "480px" }}>
-          <p style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.25em", textTransform: "uppercase", fontSize: "0.7rem", transform: "translateZ(10px)" }}>get in touch</p>
-          <h2 style={{ fontSize: "clamp(2.5rem, 8vw, 4.5rem)", fontWeight: 800, color: "white", textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", textShadow: "0 0 80px rgba(140,100,255,0.4)", transform: "translateZ(40px)" }}>Let's Talk.</h2>
-          <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.8, fontSize: "0.95rem", transform: "translateZ(20px)", maxWidth: "360px" }}>
+        <div ref={ref} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: isCompact ? "16px" : "20px", transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.12s ease-out", transformStyle: "preserve-3d", padding: isCompact ? "0 18px" : "0 32px", width: "100%", maxWidth: "480px" }}>
+          <p style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.25em", textTransform: "uppercase", fontSize: isCompact ? "0.62rem" : "0.7rem", transform: "translateZ(10px)" }}>get in touch</p>
+          <h2 style={{ fontSize: isCompact ? "clamp(2.1rem, 12vw, 3.5rem)" : "clamp(2.5rem, 8vw, 4.5rem)", fontWeight: 800, color: "white", textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", textShadow: "0 0 80px rgba(140,100,255,0.4)", transform: "translateZ(40px)" }}>Let's Talk.</h2>
+          <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.8, fontSize: isCompact ? "0.88rem" : "0.95rem", transform: "translateZ(20px)", maxWidth: "360px" }}>
             Have a project in mind or just want to say hello?
           </p>
 
-          <button onClick={() => setFormOpen(true)} style={{ marginTop: "4px", padding: "14px 44px", borderRadius: "100px", border: "1.5px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: "0.9rem", letterSpacing: "0.12em", backdropFilter: "blur(12px)", transition: "all 0.25s", boxShadow: "0 0 30px rgba(140,100,255,0.15)", transform: "translateZ(30px)" }}
+          <button onClick={() => setFormOpen(true)} style={{ marginTop: "4px", padding: isCompact ? "12px 34px" : "14px 44px", borderRadius: "100px", border: "1.5px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: isCompact ? "0.82rem" : "0.9rem", letterSpacing: "0.12em", backdropFilter: "blur(12px)", transition: "all 0.25s", boxShadow: "0 0 30px rgba(140,100,255,0.15)", transform: "translateZ(30px)" }}
             onMouseOver={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.14)"; b.style.boxShadow = "0 0 50px rgba(140,100,255,0.3)"; }}
             onMouseOut={e => {  const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.07)"; b.style.boxShadow = "0 0 30px rgba(140,100,255,0.15)"; }}>
             send a message
@@ -430,7 +490,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
               { href: "https://www.linkedin.com/in/efe-goodness-5b995b2a1", icon: <span style={{ fontWeight: 700, fontSize: "0.75rem" }}>in</span>, label: "LinkedIn" },
             ].map(({ href, icon, label }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" title={label}
-                style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "100px", border: "1.5px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: "0.8rem", backdropFilter: "blur(8px)", transition: "all 0.25s" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px", padding: isCompact ? "9px 16px" : "10px 20px", borderRadius: "100px", border: "1.5px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: isCompact ? "0.74rem" : "0.8rem", backdropFilter: "blur(8px)", transition: "all 0.25s" }}
                 onMouseOver={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = "rgba(255,255,255,0.1)"; a.style.color = "white"; a.style.borderColor = "rgba(255,255,255,0.3)"; }}
                 onMouseOut={e => {  const a = e.currentTarget as HTMLAnchorElement; a.style.background = "rgba(255,255,255,0.04)"; a.style.color = "rgba(255,255,255,0.55)"; a.style.borderColor = "rgba(255,255,255,0.12)"; }}>
                 {icon} {label}
@@ -441,7 +501,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* form sheet */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(18,14,40,0.95)", borderTop: "1px solid rgba(255,255,255,0.08)", borderRadius: "24px 24px 0 0", padding: "32px 32px 48px", transform: formOpen ? "translateY(0)" : "translateY(100%)", transition: "transform 0.55s cubic-bezier(0.77,0,0.18,1)", zIndex: 20, backdropFilter: "blur(24px)" }}>
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(18,14,40,0.95)", borderTop: "1px solid rgba(255,255,255,0.08)", borderRadius: "24px 24px 0 0", padding: isCompact ? "24px 18px 34px" : "32px 32px 48px", transform: formOpen ? "translateY(0)" : "translateY(100%)", transition: "transform 0.55s cubic-bezier(0.77,0,0.18,1)", zIndex: 20, backdropFilter: "blur(24px)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
           <p style={{ color: "white", fontWeight: 600, fontSize: "1.05rem" }}>Send a message</p>
           <button onClick={() => setFormOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", display: "flex", padding: "4px" }}
@@ -514,7 +574,7 @@ export default function App() {
 
   return (
     <ThemeCtx.Provider value={ctx}>
-      <div style={{ width: "100%", height: "100vh", overflow: "hidden", position: "relative", fontFamily: "system-ui, sans-serif", background: "#000" }}>
+      <div style={{ width: "100%", height: "100vh", overflow: "hidden", position: "relative", fontFamily: "system-ui, sans-serif", background: "#000", touchAction: "manipulation" }}>
 
         {outgoing && (
           <div key={`out-${outgoing.page}`} style={{ position: "absolute", inset: 0, zIndex: 1, animation: `pageOut 0.65s ${EASE} forwards` }}>
