@@ -40,10 +40,24 @@ function readRequestBody(req: IncomingMessage) {
   });
 }
 
+function normalizeSmtpHost(value: string | undefined) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  try {
+    const parsed = new URL(raw);
+    return parsed.hostname + (parsed.port ? `:${parsed.port}` : '');
+  } catch {
+    return raw.replace(/^https?:\/\//i, '').replace(/[#/].*$/, '').trim();
+  }
+}
+
 async function createTransport() {
-  if (process.env.SMTP_HOST || (process.env.SMTP_USER && process.env.SMTP_PASS)) {
+  const smtpHost = normalizeSmtpHost(process.env.SMTP_HOST);
+
+  if (smtpHost || (process.env.SMTP_USER && process.env.SMTP_PASS)) {
     return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: smtpHost,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false') === 'true',
       connectionTimeout: 10000,
