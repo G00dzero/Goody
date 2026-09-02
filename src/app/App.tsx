@@ -528,7 +528,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
               </a>
             ))}
             {/* <a
-              href="/Goodness%20Efe.pdf"
+              href="/Goodness_Efe_Software_Developer_CV.pdf"
               target="_blank"
               rel="noopener noreferrer"
               download
