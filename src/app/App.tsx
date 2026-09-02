@@ -209,9 +209,9 @@ function AboutPage({ onBack }: { onBack: () => void }) {
               ))}
             </div>
 
-            <a  href="Goodness_Efe_Software_Developer_CV.pdf" target="_blank"
+            <a  href="/Goodness_Efe_Software_Developer_CV.pdf" target="_blank"
             rel="noopener noreferrer"
-              download
+              download="Goodness_Efe_Software_Developer_CV.pdf"
               style={{
                 color: isDark ? "white" : "#6b5f50",
                 textDecoration: "none",
