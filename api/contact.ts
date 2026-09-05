@@ -1,36 +1,19 @@
 import sgMail from '@sendgrid/mail';
-import { Pool } from 'pg';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getDatabase, push, ref, update } from 'firebase/database';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-let pool: Pool | undefined;
-let tableReady: Promise<void> | undefined;
-
-function getPool() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not configured');
-  }
-
-  pool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-    max: 3,
+function getFirebaseDatabase() {
+  const app = getApps().length ? getApp() : initializeApp({
+    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyC9HdjTB1B5Cj4QG0ictB9melCVSSB0Zko',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'portfoliogoody-6f75c.firebaseapp.com',
+    databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://portfoliogoody-6f75c-default-rtdb.firebaseio.com',
+    projectId: process.env.FIREBASE_PROJECT_ID || 'portfoliogoody-6f75c',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'portfoliogoody-6f75c.firebasestorage.app',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '1037598964400',
+    appId: process.env.FIREBASE_APP_ID || '1:1037598964400:web:9befd39f26e523f18cd975',
   });
-  return pool;
-}
-
-async function ensureTable() {
-  tableReady ??= getPool().query(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id BIGSERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      message TEXT NOT NULL,
-      delivery_status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      sent_at TIMESTAMPTZ
-    )
-  `).then(() => undefined);
-  return tableReady;
+  return getDatabase(app);
 }
 
 function sendJson(res: ServerResponse, status: number, data: Record<string, unknown>) {
@@ -99,15 +82,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       throw new Error('SENDGRID_API_KEY and MAIL_FROM must be configured');
     }
 
-    await ensureTable();
-    const database = getPool();
-    const result = await database.query<{ id: number }>(
-      `INSERT INTO contact_messages (name, email, message)
-       VALUES ($1, $2, $3)
-       RETURNING id`,
-      [payload.name, payload.email, payload.message],
-    );
-    const messageId = result.rows[0].id;
+    const database = getFirebaseDatabase();
+    const messageRef = push(ref(database, 'contactMessages'));
+    if (!messageRef.key) throw new Error('Could not create a Firebase message ID');
+    await update(messageRef, {
+      name: payload.name,
+      email: payload.email,
+      message: payload.message,
+      deliveryStatus: 'pending',
+      createdAt: new Date().toISOString(),
+    });
     const toAddress = process.env.MAIL_TO || 'goodnessefe01@icloud.com';
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -119,15 +103,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       subject: `Portfolio message from ${payload.name}`,
       text: `Name: ${payload.name}\nEmail: ${payload.email}\n\n${payload.message}`,
       });
-      await database.query(
-        `UPDATE contact_messages SET delivery_status = 'sent', sent_at = NOW() WHERE id = $1`,
-        [messageId],
-      );
+      await update(messageRef, { deliveryStatus: 'sent', sentAt: new Date().toISOString() });
     } catch (error) {
-      await database.query(
-        `UPDATE contact_messages SET delivery_status = 'failed' WHERE id = $1`,
-        [messageId],
-      );
+      await update(messageRef, { deliveryStatus: 'failed' });
       throw error;
     }
 

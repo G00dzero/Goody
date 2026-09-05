@@ -1,8 +1,7 @@
 import http from 'node:http';
 import sgMail from '@sendgrid/mail';
-import pg from 'pg';
-
-const { Pool } = pg;
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getDatabase, push, ref, update } from 'firebase/database';
 
 const host = '127.0.0.1';
 const port = Number(process.env.PORT || 3001);
@@ -28,23 +27,17 @@ function readJson(req) {
   });
 }
 
-const database = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-});
-
-async function ensureTable() {
-  await database.query(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id BIGSERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      message TEXT NOT NULL,
-      delivery_status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      sent_at TIMESTAMPTZ
-    )
-  `);
+function getFirebaseDatabase() {
+  const app = getApps().length ? getApp() : initializeApp({
+    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyC9HdjTB1B5Cj4QG0ictB9melCVSSB0Zko',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'portfoliogoody-6f75c.firebaseapp.com',
+    databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://portfoliogoody-6f75c-default-rtdb.firebaseio.com',
+    projectId: process.env.FIREBASE_PROJECT_ID || 'portfoliogoody-6f75c',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'portfoliogoody-6f75c.firebasestorage.app',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '1037598964400',
+    appId: process.env.FIREBASE_APP_ID || '1:1037598964400:web:9befd39f26e523f18cd975',
+  });
+  return getDatabase(app);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -76,18 +69,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM || !process.env.DATABASE_URL) {
-      throw new Error('SENDGRID_API_KEY, MAIL_FROM, and DATABASE_URL must be configured');
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM) {
+      throw new Error('SENDGRID_API_KEY and MAIL_FROM must be configured');
     }
 
-    await ensureTable();
-    const inserted = await database.query(
-      `INSERT INTO contact_messages (name, email, message)
-       VALUES ($1, $2, $3)
-       RETURNING id`,
-      [name, email, message],
-    );
-    const messageId = inserted.rows[0].id;
+    const database = getFirebaseDatabase();
+    const messageRef = push(ref(database, 'contactMessages'));
+    if (!messageRef.key) throw new Error('Could not create a Firebase message ID');
+    await update(messageRef, {
+      name,
+      email,
+      message,
+      deliveryStatus: 'pending',
+      createdAt: new Date().toISOString(),
+    });
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
     try {
@@ -98,15 +93,9 @@ const server = http.createServer(async (req, res) => {
         subject: `Portfolio message from ${name}`,
         text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
       });
-      await database.query(
-        `UPDATE contact_messages SET delivery_status = 'sent', sent_at = NOW() WHERE id = $1`,
-        [messageId],
-      );
+      await update(messageRef, { deliveryStatus: 'sent', sentAt: new Date().toISOString() });
     } catch (error) {
-      await database.query(
-        `UPDATE contact_messages SET delivery_status = 'failed' WHERE id = $1`,
-        [messageId],
-      );
+      await update(messageRef, { deliveryStatus: 'failed' });
       throw error;
     }
 
@@ -120,8 +109,8 @@ const server = http.createServer(async (req, res) => {
 
 async function main() {
   try {
-    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM || !process.env.DATABASE_URL) {
-      throw new Error('SENDGRID_API_KEY, MAIL_FROM, and DATABASE_URL must be configured');
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM) {
+      throw new Error('SENDGRID_API_KEY and MAIL_FROM must be configured');
     }
     server.listen(port, host, () => {
       console.log(`Email API running at http://${host}:${port}`);
