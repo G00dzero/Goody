@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node ./node_modules/vite/bin/vite.js build",
     "dev": "vite",
-    "email-server": "node server.mjs"
+    "email-server": "node --env-file=.env server.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -40,6 +40,7 @@
     "@radix-ui/react-toggle": "1.1.2",
     "@radix-ui/react-toggle-group": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.8",
+    "@sendgrid/mail": "^8.1.6",
     "canvas-confetti": "1.9.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -50,16 +51,16 @@
     "lucide-react": "0.487.0",
     "motion": "12.23.24",
     "next-themes": "0.4.6",
-    "nodemailer": "^9.0.3",
+    "pg": "^8.23.0",
+    "react": "18.3.1",
     "react-day-picker": "8.10.1",
     "react-dnd": "16.0.1",
     "react-dnd-html5-backend": "16.0.1",
+    "react-dom": "18.3.1",
     "react-hook-form": "7.55.0",
-    "react": "18.3.1",
     "react-popper": "2.3.0",
     "react-resizable-panels": "2.1.7",
     "react-responsive-masonry": "2.7.1",
-    "react-dom": "18.3.1",
     "react-slick": "0.31.0",
     "recharts": "2.15.2",
     "sonner": "2.0.3",
@@ -68,11 +69,12 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
-    "@types/nodemailer": "^6.4.18",
     "@tailwindcss/vite": "4.1.12",
+    "@types/node": "^24.2.1",
+    "@types/pg": "^8.23.1",
     "@vitejs/plugin-react": "4.7.0",
     "tailwindcss": "4.1.12",
+    "typescript": "^5.9.2",
     "vite": "^6.4.3"
   },
   "peerDependencies": {

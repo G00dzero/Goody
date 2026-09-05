@@ -1,5 +1,37 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
+import { Pool } from 'pg';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+
+let pool: Pool | undefined;
+let tableReady: Promise<void> | undefined;
+
+function getPool() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is not configured');
+  }
+
+  pool ??= new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+    max: 3,
+  });
+  return pool;
+}
+
+async function ensureTable() {
+  tableReady ??= getPool().query(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      delivery_status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ
+    )
+  `).then(() => undefined);
+  return tableReady;
+}
 
 function sendJson(res: ServerResponse, status: number, data: Record<string, unknown>) {
   res.statusCode = status;
@@ -40,41 +72,6 @@ function readRequestBody(req: IncomingMessage) {
   });
 }
 
-function normalizeSmtpHost(value: string | undefined) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-
-  try {
-    const parsed = new URL(raw);
-    return parsed.hostname + (parsed.port ? `:${parsed.port}` : '');
-  } catch {
-    return raw.replace(/^https?:\/\//i, '').replace(/[#/].*$/, '').trim();
-  }
-}
-
-async function createTransport() {
-  const smtpHost = normalizeSmtpHost(process.env.SMTP_HOST);
-
-  if (smtpHost || (process.env.SMTP_USER && process.env.SMTP_PASS)) {
-    return nodemailer.createTransport({
-      host: smtpHost,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: String(process.env.SMTP_SECURE || 'false') === 'true',
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      auth: process.env.SMTP_USER && process.env.SMTP_PASS
-        ? {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          }
-        : undefined,
-    });
-  }
-
-  throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS must be configured in Vercel');
-}
-
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -98,17 +95,41 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const transporter = await createTransport();
-    const toAddress = process.env.MAIL_TO || 'goodnessefe01@icloud.com';
-    const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER || toAddress;
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM) {
+      throw new Error('SENDGRID_API_KEY and MAIL_FROM must be configured');
+    }
 
-    await transporter.sendMail({
-      from: `Portfolio Contact <${fromAddress}>`,
+    await ensureTable();
+    const database = getPool();
+    const result = await database.query<{ id: number }>(
+      `INSERT INTO contact_messages (name, email, message)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [payload.name, payload.email, payload.message],
+    );
+    const messageId = result.rows[0].id;
+    const toAddress = process.env.MAIL_TO || 'goodnessefe01@icloud.com';
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    try {
+      await sgMail.send({
+      from: process.env.MAIL_FROM,
       to: toAddress,
-      replyTo: payload.email,
+      replyTo: { email: payload.email, name: payload.name },
       subject: `Portfolio message from ${payload.name}`,
       text: `Name: ${payload.name}\nEmail: ${payload.email}\n\n${payload.message}`,
-    });
+      });
+      await database.query(
+        `UPDATE contact_messages SET delivery_status = 'sent', sent_at = NOW() WHERE id = $1`,
+        [messageId],
+      );
+    } catch (error) {
+      await database.query(
+        `UPDATE contact_messages SET delivery_status = 'failed' WHERE id = $1`,
+        [messageId],
+      );
+      throw error;
+    }
 
     sendJson(res, 200, { ok: true });
   } catch (error) {

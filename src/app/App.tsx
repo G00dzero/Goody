@@ -476,7 +476,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
         : errMsg;
       setStatus({
         kind: "error",
-        message: `Email could not be sent. ${timeoutMessage} Make sure SMTP settings are configured in Vercel.`,
+        message: `Email could not be sent. ${timeoutMessage} Make sure SendGrid and database settings are configured.`,
       });
     } finally {
       clearTimeout(timeoutId);

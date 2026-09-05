@@ -1,5 +1,8 @@
 import http from 'node:http';
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
+import pg from 'pg';
+
+const { Pool } = pg;
 
 const host = '127.0.0.1';
 const port = Number(process.env.PORT || 3001);
@@ -25,35 +28,23 @@ function readJson(req) {
   });
 }
 
-let transporter;
-let usingEthereal = false;
+const database = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+});
 
-async function setupTransport() {
-  if (process.env.SMTP_HOST || (process.env.SMTP_USER && process.env.SMTP_PASS)) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: String(process.env.SMTP_SECURE || 'false') === 'true',
-      auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      } : undefined,
-    });
-    usingEthereal = false;
-    console.log('Using SMTP host:', process.env.SMTP_HOST || '(auth only)');
-  } else {
-    // Fall back to Ethereal for local development/testing when no SMTP configured
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: testAccount.smtp.host,
-      port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure,
-      auth: { user: testAccount.user, pass: testAccount.pass },
-    });
-    usingEthereal = true;
-    console.log('No SMTP configured — using Ethereal test account for email previews.');
-    console.log('Ethereal user:', testAccount.user);
-  }
+async function ensureTable() {
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      delivery_status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ
+    )
+  `);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -85,20 +76,38 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const toAddress = process.env.MAIL_TO || 'goodnessefe01@icloud.com';
-    const fromAddress = process.env.MAIL_FROM || process.env.SMTP_USER || toAddress;
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM || !process.env.DATABASE_URL) {
+      throw new Error('SENDGRID_API_KEY, MAIL_FROM, and DATABASE_URL must be configured');
+    }
 
-    const info = await transporter.sendMail({
-      from: `Portfolio Contact <${fromAddress}>`,
-      to: toAddress,
-      replyTo: email,
-      subject: `Portfolio message from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-    });
+    await ensureTable();
+    const inserted = await database.query(
+      `INSERT INTO contact_messages (name, email, message)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [name, email, message],
+    );
+    const messageId = inserted.rows[0].id;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    if (usingEthereal) {
-      const preview = nodemailer.getTestMessageUrl(info);
-      console.log('Preview URL (Ethereal):', preview);
+    try {
+      await sgMail.send({
+        from: process.env.MAIL_FROM,
+        to: process.env.MAIL_TO || 'goodnessefe01@icloud.com',
+        replyTo: { email, name },
+        subject: `Portfolio message from ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+      });
+      await database.query(
+        `UPDATE contact_messages SET delivery_status = 'sent', sent_at = NOW() WHERE id = $1`,
+        [messageId],
+      );
+    } catch (error) {
+      await database.query(
+        `UPDATE contact_messages SET delivery_status = 'failed' WHERE id = $1`,
+        [messageId],
+      );
+      throw error;
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -111,7 +120,9 @@ const server = http.createServer(async (req, res) => {
 
 async function main() {
   try {
-    await setupTransport();
+    if (!process.env.SENDGRID_API_KEY || !process.env.MAIL_FROM || !process.env.DATABASE_URL) {
+      throw new Error('SENDGRID_API_KEY, MAIL_FROM, and DATABASE_URL must be configured');
+    }
     server.listen(port, host, () => {
       console.log(`Email API running at http://${host}:${port}`);
     });
