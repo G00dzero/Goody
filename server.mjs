@@ -27,6 +27,11 @@ function readJson(req) {
   });
 }
 
+function normalizePrivateKey(value) {
+  const withoutQuotes = value.trim().replace(/^(['"])(.*)\1$/s, '$2');
+  return withoutQuotes.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+}
+
 function getFirebaseDatabase() {
   if (getApps().length) return getDatabase(getApp());
 
@@ -41,6 +46,10 @@ function getFirebaseDatabase() {
         };
   } catch {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
+  }
+
+  if (serviceAccount.privateKey) {
+    serviceAccount.privateKey = normalizePrivateKey(serviceAccount.privateKey);
   }
 
   if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {

@@ -3,6 +3,11 @@ import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+function normalizePrivateKey(value: string) {
+  const withoutQuotes = value.trim().replace(/^(['"])(.*)\1$/s, '$2');
+  return withoutQuotes.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+}
+
 function getFirebaseDatabase() {
   if (getApps().length) return getDatabase(getApp());
 
@@ -17,6 +22,10 @@ function getFirebaseDatabase() {
         };
   } catch {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
+  }
+
+  if (serviceAccount.privateKey) {
+    serviceAccount.privateKey = normalizePrivateKey(serviceAccount.privateKey);
   }
 
   if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
