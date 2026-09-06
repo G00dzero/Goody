@@ -2,10 +2,7 @@
   "rules": {
     "contactMessages": {
       ".read": false,
-      "$messageId": {
-        ".write": "!data.exists() || (data.exists() && newData.child('name').val() == data.child('name').val() && newData.child('email').val() == data.child('email').val() && newData.child('message').val() == data.child('message').val())",
-        ".validate": "newData.hasChildren(['name', 'email', 'message', 'deliveryStatus', 'createdAt']) && newData.child('name').isString() && newData.child('email').isString() && newData.child('message').isString() && (newData.child('deliveryStatus').val() == 'pending' || newData.child('deliveryStatus').val() == 'sent' || newData.child('deliveryStatus').val() == 'failed') && newData.child('createdAt').isString()"
-      }
+      ".write": false
     }
   }
 }

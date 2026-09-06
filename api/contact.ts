@@ -1,17 +1,31 @@
 import sgMail from '@sendgrid/mail';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getDatabase, push, ref, update } from 'firebase/database';
+import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getDatabase } from 'firebase-admin/database';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 function getFirebaseDatabase() {
-  const app = getApps().length ? getApp() : initializeApp({
-    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyC9HdjTB1B5Cj4QG0ictB9melCVSSB0Zko',
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'portfoliogoody-6f75c.firebaseapp.com',
+  if (getApps().length) return getDatabase(getApp());
+
+  let serviceAccount: { projectId?: string; clientEmail?: string; privateKey?: string };
+  try {
+    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+      : {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        };
+  } catch {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
+  }
+
+  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+    throw new Error('Firebase Admin credentials are not configured');
+  }
+
+  const app = initializeApp({
+    credential: cert(serviceAccount),
     databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://portfoliogoody-6f75c-default-rtdb.firebaseio.com',
-    projectId: process.env.FIREBASE_PROJECT_ID || 'portfoliogoody-6f75c',
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'portfoliogoody-6f75c.firebasestorage.app',
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '1037598964400',
-    appId: process.env.FIREBASE_APP_ID || '1:1037598964400:web:9befd39f26e523f18cd975',
   });
   return getDatabase(app);
 }
@@ -83,9 +97,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     const database = getFirebaseDatabase();
-    const messageRef = push(ref(database, 'contactMessages'));
+    const messageRef = database.ref('contactMessages').push();
     if (!messageRef.key) throw new Error('Could not create a Firebase message ID');
-    await update(messageRef, {
+    await messageRef.update({
       name: payload.name,
       email: payload.email,
       message: payload.message,
@@ -103,9 +117,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       subject: `Portfolio message from ${payload.name}`,
       text: `Name: ${payload.name}\nEmail: ${payload.email}\n\n${payload.message}`,
       });
-      await update(messageRef, { deliveryStatus: 'sent', sentAt: new Date().toISOString() });
+      await messageRef.update({ deliveryStatus: 'sent', sentAt: new Date().toISOString() });
     } catch (error) {
-      await update(messageRef, { deliveryStatus: 'failed' });
+      await messageRef.update({ deliveryStatus: 'failed' });
       throw error;
     }
 

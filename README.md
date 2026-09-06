@@ -20,7 +20,9 @@
   - `MAIL_TO`: the inbox that receives portfolio messages.
   - `FIREBASE_DATABASE_URL`: `https://portfoliogoody-6f75c-default-rtdb.firebaseio.com`.
 
-  The Firebase web configuration is included in `.env.example`. Each row records the sender, message, timestamp, and delivery status (`pending`, `sent`, or `failed`). The starter rules are in `database.rules.json`; deploy them from the Firebase console or with the Firebase CLI. These rules allow a new contact message but keep the database unreadable. Because the backend uses the Firebase client SDK, the route must be able to create the initial record.
+  The backend uses Firebase Admin SDK, so it needs a Firebase service account. Set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`, or provide `FIREBASE_SERVICE_ACCOUNT_JSON`. The private key must stay in deployment environment variables and must not be committed. Each row records the sender, message, timestamp, and delivery status (`pending`, `sent`, or `failed`).
+
+  The rules in `database.rules.json` deny public reads and writes. This is intentional: the server uses Admin SDK credentials, which bypass Realtime Database Rules. Deploy the rules from the Firebase console or with the Firebase CLI.
 
   Copy `.env.example` to `.env`, fill in the values, and run `npm run email-server` in a separate terminal. For Vercel, add the same variables in the project settings; `api/contact.ts` is deployed as the `/api/contact` route automatically.
   
